@@ -75,6 +75,7 @@ app.use(function(req,res,next){
 
 app.get('/', function(req,res) {
   res.render('home');
+  console.log("test");
 });
 
 app.get('/login', function(req,res){
