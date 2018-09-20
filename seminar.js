@@ -107,10 +107,38 @@ app.post('/register', function(req, res){
 });
 
 app.get('/seminars', function(req,res) {
-  res.render('seminars');
-  console.log('You are logged in as' + req.user.username);
+  var array = [];
+  var cursor = db.collection('seminars').find();
+  cursor.forEach(function(doc,err) {
+    if (err) return console.log(err)
+    array.push(doc)
+  }, function(){
+  console.log("added: ")
+  console.log(array);
+  res.render('seminars', {title: 'Seminars', items: array});
+});
 });
 
+app.get('/new_seminar', function(req,res) {
+  res.render('new_seminar');
+});
+
+app.post('/new_seminar', function(req,res) {
+  var item = {
+    title: req.body.title,
+    speaker: req.body.speaker,
+    speaker_id: req.body.speaker_id,
+    date: req.body.date,
+    time: req.body.time,
+    location: req.body.location
+  }
+
+  db.collection('seminars').insertOne(item, function(err) {
+    if (err) return console.log(err)
+  });
+  console.log('seminar added');
+  res.redirect('/seminars');
+});
 
 app.get("/logout", function(req, res){
      req.logout();
