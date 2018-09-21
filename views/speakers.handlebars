@@ -1,0 +1,30 @@
+<h1>UTS SEMINAR MANAGEMENT</h1>
+<h2>Logged in as: </h2>
+<img src="" alt="Profile Icon">
+
+<h2>Seminar Management</h2>
+<li><a href="/seminars">Seminar Dashboard</a></li>
+<li><a href="/attendees">Attendee Dashboard</a></li>
+<li><a href="/speakers">Speaker Dashboard</a></li>
+
+<form method="POST" action="/addSpeaker">
+  Speaker First Name<input type="text" name="speakerFirstName" placeholder="speaker first name">
+  Speaker Last Name<input type="text" name="speakerLastName" placeholder="speaker last name">
+  Topic<input type="text" name="topic" placeholder="topic">
+  Biography<input type="text" name="boography" placeholder="The speakers biography...">
+  <button> ADD SPEAKER </button>
+  <button> CLEAR ALL </button>
+  </form>
+
+  <select>
+    <option value="" disabled selected>Sort by</option>
+    <option value = "sortByAttendees">attendees<option>
+  </select>
+
+  <table>
+    <tr>
+      <th>Speaker First Name</th>
+      <th>Speaker Last Name</th>
+      <th>Action</th>
+    </tr>
+  </table>
