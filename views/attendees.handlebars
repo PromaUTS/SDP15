@@ -1,42 +1,31 @@
 <h1>UTS SEMINAR MANAGEMENT</h1>
-<h2>Logged in as: </h2>
-<img src="" alt="Profile Icon">
+<h2>Logged in as: <img src="" alt="Profile Icon"> </h2>
+
 
 <h2>Seminar Management</h2>
-<li><a href="/seminars">Seminar Dashboard</a></li>
+<li><a href="/management">Seminar Dashboard</a></li>
 <li><a href="/attendees">Attendee Dashboard</a></li>
 <li><a href="/speakers">Speaker Dashboard</a></li>
 
 <form method="POST" action="/addAttendee">
-  Seminar Name<input type="text" name="seminarName" placeholder="seminar name">
-  # of Attendees<input type="text" name="attendees">
-  Description<input type="text" name="description" placeholder="description">
-  Speaker/s<select>
-              <option value="" disabled selected>Speaker/s</option>
-            </select>
-            <button>ADD</button>
-            <button>REMOVE</button>
-  
+  Attendee Email<input type="text" name="attendeeEmail" placeholder="attendee emaill address...">
+  First Name<input type="text" name="firstName" placeholder="first name">
+  Last Name<input type="text" name="lastName" placeholder="last name">
   <button> ADD ATTENDEE </button>
   <button> CLEAR ALL </button>
   </form>
 
   <select>
     <option value="" disabled selected>Sort by</option>
-    <option value = "sortByAttendees">attendees<option>
+    <option value = "sortByFirstName">First Name<option>
+    <option value = "sortByLastName">Last Name<option>
   </select>
 
   <table>
     <tr>
-      <th>Seminar name</th>
-      <th>Room No</th>
-      <th>Attendees</th>
+      <th>First Name</th>
+      <th>Last Name</th>
+      <th>Email</th>
       <th>Action</th>
     </tr>
-    <!-- {{#each items}}
-      <td>{{title}}</td>
-      <td>{{room}}</td>
-      <td>{{attendees}}</td>
-      <td>{{action}}</td>
-    {{/each}} -->
   </table>
