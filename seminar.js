@@ -7,6 +7,7 @@ const mongoose = require('mongoose');
 const passportLocalMongoose = require('passport-local-mongoose');
 const passport = require('passport');
 const flash = require('connect-flash');
+const objectID = require('mongodb').ObjectID;
 var db;
 
 var handlebars = require('express3-handlebars').create({ defaultLayout:'main' });
@@ -74,8 +75,7 @@ app.use(function(req,res,next){
 });
 
 app.get('/', function(req,res) {
-  res.render('home');
-  console.log("test");
+  res.redirect('seminars');
 });
 
 app.get('/login', function(req,res){
@@ -107,17 +107,53 @@ app.post('/register', function(req, res){
   res.redirect('/');
 });
 
+/* ---- VIEW SEMINARS ---- */
 app.get('/seminars', function(req,res) {
+  var count = 0;
   var array = [];
   var cursor = db.collection('seminars').find();
   cursor.forEach(function(doc,err) {
     if (err) return console.log(err)
+    count++;
     array.push(doc)
+
   }, function(){
-  console.log("added: ")
-  console.log(array);
-  res.render('seminars', {title: 'Seminars', items: array});
+        res.render('seminars', {title: 'Seminars', items: array, count});
+      });
 });
+
+
+app.post('/seminars', function(req,res) {
+
+  var button = Object.keys(req.body);
+  var id = req.body[button[0]];
+  console.log(id);
+
+  if (button == "register") {
+    console.log("found register!");
+  }
+  else {
+    console.log("found info!");
+    var url = '/seminars/' + id;
+    console.log(url);
+    res.redirect(url);
+  }
+});
+
+app.get('/seminars/:id', function(req,res) {
+  console.log("made it to seminars/id")
+  var o_id = new objectID(req.params.id);
+
+  var doc;
+  db.collection('seminars').findOne( {_id: o_id}, function(err, seminar) {
+    if (err) throw console.log(err);
+    if (seminar) {
+      doc = seminar;
+      console.log("redirecting to seminar");
+      res.render('seminar', {Title: 'Seminar', items: doc});
+    }
+    })
+
 });
 
 app.get('/new_seminar', function(req,res) {
@@ -125,20 +161,26 @@ app.get('/new_seminar', function(req,res) {
 });
 
 app.post('/new_seminar', function(req,res) {
-  var item = {
-    title: req.body.title,
-    speaker: req.body.speaker,
-    speaker_id: req.body.speaker_id,
-    date: req.body.date,
-    time: req.body.time,
-    location: req.body.location
-  }
+    db.collection('seminars').countDocuments({},{},function(err, result) {
+    if (err) return console.log(err);
 
-  db.collection('seminars').insertOne(item, function(err) {
-    if (err) return console.log(err)
+    var item = {
+      /*id: result,*/
+      title: req.body.title,
+      speaker: req.body.speaker,
+      speaker_id: req.body.speaker_id,
+      date: req.body.date,
+      time: req.body.time,
+      location: req.body.location
+    }
+
+    db.collection('seminars').insertOne(item, function(err) {
+      if (err) {
+        return console.log(err)
+      }
+    })
+    res.redirect('/seminars');
   });
-  console.log('seminar added');
-  res.redirect('/seminars');
 });
 
 app.get("/logout", function(req, res){
