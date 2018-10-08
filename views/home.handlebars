@@ -1,4 +1,25 @@
-<h1>Welcome to UTS Seminar Booking System</h1>
-
-<li><a href="/register">Sign Up</a></li>
+<h1>UTTS SEMINARS</h1>
 <li><a href="/login">Login</a></li>
+
+<form action = "/home">
+Organizer<input type="text" placeholder="organizer name">
+Seminar Location<input type="text" placeholder="seminar location">
+Speaker<input type="text" placeholder="speaker">
+</br>
+Start Date<input type="text" placeholder="start date">
+End Date<input type="text" placeholder="end date">
+</form>
+
+<table>
+  <tr>
+    <th>Seminar name</th><th>Organizer</th><th>Seminar Location</th><th>Date Range</th><th>Speaker</th><th>Action</th>
+  </tr>
+  {{#each items}}
+    <td>{{title}}</td>
+    <td>{{organizer}}</td>
+    <td>{{location}}</td>
+    <td>{{dateRange}}</td>
+    <td>{{speakers}}</td>
+    <td>{{action}}</td>
+  {{/each}}
+</table>
