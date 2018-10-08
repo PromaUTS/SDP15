@@ -1,0 +1,43 @@
+<h1>UTS SEMINAR MANAGEMENT</h1>
+<h2>Logged in as: </h2>
+<img src="" alt="Profile Icon">
+
+<h2>User Management</h2>
+<li><a href="/addUser">Add User</a></li>
+<h2>Seminar Management</h2>
+<li><a href="/seminars">Seminar Dashboard</a></li>
+<li><a href="/attendees">Attendee Dashboard</a></li>
+<li><a href="/speakers">Speaker Dashboard</a></li>
+
+<form method="POST" action="/addUser">
+  Username<input type="text" name="username" placeholder="username">
+  Role  <select>
+          <option value = "Organiser">Organiser<option>
+          <option value = "Seminar Host">Seminar Host<option>
+        </select>
+  First Name<input type="text" name="firstName" placeholder="first name">
+  Last Name<input type="text" name="lastName" placeholder="last name">
+  password<input type="password" name="password" placeholder="password">
+  <button> ADD USER </button>
+  <button> CLEAR ALL </button>
+  </form>
+
+  <select>
+    <option value="" disabled selected>Sort by</option>
+    <option value = "sortByAttendees">attendees<option>
+  </select>
+
+  <table>
+    <tr>
+      <th>Seminar name</th>
+      <th>Room No</th>
+      <th>Attendees</th>
+      <th>Action</th>
+    </tr>
+    {{#each items}}
+      <td>{{title}}</td>
+      <td>{{room}}</td>
+      <td>{{attendees}}</td>
+      <td>{{action}}</td>
+    {{/each}}
+  </table>
