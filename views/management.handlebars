@@ -1,13 +1,38 @@
 <h1>UTS SEMINAR MANAGEMENT</h1>
-<h2>Logged in as: <img src="" alt="Profile Icon"></h2>
+<h2>Logged in as: {{username}} <img src="" alt="Profile Icon"></h2>
+
+{{#if isAdmin}}
+  <h2>User Management</h2>
+  <form method="POST" action="/addUser">
+    Username<input type="text" name="firstname">
+    Role<select name="role">
+      <option value = "user">Non-UTS student</option>
+      <option value = "organiser">Organiser</option>
+      <option value = "host">Host</option>
+      <option value = "admin">System Admin</option> <br>
+    </select> <br>
+    First Name<input type="text" name="firstname">
+    email<input type="text" name="email"> <br>
+    Last name<input type="text" name="lastname">
+    password<input type="password" name="password">
+    <br>
+    Confirm Password<input type="password" name="confirmedpassword"> <br>
+    Description<br><textarea name="description" rows="8" cols="50">
+    </textarea><br>
+    <button>Add User</button>
+    </form>
 
 
+
+{{/if}}
+
+{{#if isOrganiser}}
 <h2>Seminar Management</h2>
 <li><a href="/management">Seminar Dashboard</a></li>
 <li><a href="/attendees">Attendee Dashboard</a></li>
 <li><a href="/speakers">Speaker Dashboard</a></li>
 
-<form method="POST" action="/addAttendee">
+<form method="POST" action="/addUser">
   Seminar Name<input type="text" name="seminarName" placeholder="seminar name">
   size of seminar<input type="text" name="attendees"placeholder="max number of attendees">
   Description<input type="text" name="description" placeholder="description">
@@ -40,3 +65,4 @@
       <td>{{action}}</td>
     {{/each}}
   </table>
+  {{/if}}

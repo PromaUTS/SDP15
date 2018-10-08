@@ -1,9 +1,34 @@
-<h1> Sign Up Form </h1>
-<form method="POST" action="/register">
-  <input type="text" name="username" placeholder="username">
+
+{{#if isConfirmed}}
+<form method="POST" action="/register/{{seminarId}}/complete">
+  <input type="text" name="firstname">First Name</input>
+  <input type="text" name="lastname">Last Name</input>
+  <input type="text" name="email" >Email</input>
+  <button> Submit </button>
+{{else}}
+
+{{#if isStudent}}
+<p>Log in to confirm you are a student
+<form method="POST" action="/register/{{seminarId}}/utsLogin">
+  <input type="text" name="studentId" placeholder="Student ID">
   <input type="password" name="password" placeholder="password">
   <button> Submit </button>
 </form>
-   <li><a href="/register">Sign Up</a></li>
-   <li><a href="/logout">Logout</a></li>
-   <li><a href="/login">Login</a></li>
+
+
+{{else}}
+
+{{#if isVisitor}}
+
+  <p>Send an email to the organiser to register
+
+{{else}}
+  <form method="POST" action="/register/{{seminarId}}/registerHandle">
+    <p>Are you a UTS student or Visitor?</p>
+    <input type="radio" name="userType" value="uts">UTS Student<br>
+    <input type="radio" name="userType" value="visitor">Visitor<br>
+    <button> Submit </button>
+  </form>
+{{/if}}
+{{/if}}
+{{/if}}
