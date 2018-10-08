@@ -1,12 +1,22 @@
 <h1>Seminars</h1>
-
+<h3>Are you an admin or organiser? Log in here</h3>
+<body>
 
 <table>
   <tr>
     <th>Title</th>
     <th>Speaker</th>
   </tr>
+  <tr>
+  <form method="POST" action="/seminars">
   {{#each items}}
+    <tr>
     <td>{{title}}</td>
     <td>{{speaker}}</td>
+    <td><button value="{{_id}}" name = "register">Register</button></td>
+    <td><button value="{{_id}}" name = "info">Info</button></td>
+    </tr>
   {{/each}}
+  </form>
+
+</body>

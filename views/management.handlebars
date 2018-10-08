@@ -1,7 +1,10 @@
 <h1>UTS SEMINAR MANAGEMENT</h1>
-<h2>Logged in as: <img src="" alt="Profile Icon"></h2>
+<h2>Logged in as: {{username}} <img src="" alt="Profile Icon"></h2>
 
-
+{{#if isAdmin}}
+  <h2>User Management</h2>
+  <li><a href="/addUser">Add User</a></li>
+{{/if}}
 <h2>Seminar Management</h2>
 <li><a href="/management">Seminar Dashboard</a></li>
 <li><a href="/attendees">Attendee Dashboard</a></li>

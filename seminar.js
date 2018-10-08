@@ -84,43 +84,141 @@ app.get('/login', function(req,res){
 
 app.post('/login',
   passport.authenticate('user', {
-    successRedirect:'/seminars',
+    successRedirect:'/management',
     failureRedirect:'/login',
     failureFlash: true
   })
 );
 
-app.get('/register', function(req, res){
-    res.render('register');
+app.get('/register/:id', function(req, res){
+    var o_id = new objectID(req.params.id);
+
+    var doc;
+    db.collection('seminars').findOne( {_id: o_id}, function(err, seminar) {
+      if (err) throw console.log(err);
+      if (seminar) {
+        doc = seminar;
+        console.log("redirecting to seminar");
+        res.render('register', {Title: 'Register', seminar: doc, seminarId: o_id});
+      }
+      })
 });
 
-app.post('/register', function(req, res){
 
-  var item = {
-    username: req.body.username,
-    password: req.body.password
-  }
-  db.collection('users').insertOne(item, function(err) {
-    if (err) return console.log(err)
+
+app.post('/register/:id/utsLogin', function(req, res) {
+  var o_id = new objectID(req.params.id);
+  var url = '/register/' + o_id;
+  db.collection('students').findOne({studentId: req.body.studentId} , function(err, user) {
+    if (err) {
+      throw err;
+    }
+    if (!user) {
+      console.log("student not found");
+      var url = "/register/" + o_id;
+      res.redirect(url);
+    }
+    if (user) {
+      if (user.password == req.body.password) {
+        console.log("password matches!");
+        res.render('register', {isConfirmed : true, isStudent: false, seminarId: o_id })
+          }
+        }
+
+      else {
+        console.log("incorrect password");
+        res.redirect(url);
+      }
+    })
   });
-  console.log('user added');
-  res.redirect('/');
+
+app.get('/register/:id/complete', function(req,res) {
+  res.render('complete');
+})
+
+app.post('/register/:id/complete', function(req,res) {
+  var o_id = req.params.id;
+  var item = [];
+  var url = '/register/' + o_id + '/complete';
+  item = {
+    firstname: req.body.firstname,
+    lastname: req.body.lastname,
+    email: req.body.email,
+    seminarID: o_id.toString()
+  }
+  db.collection('registers').insertOne(item, function(err) {
+    if (err) throw err;
+  db.collection('registers').findOne({email: req.body.email} , function(err, user) {
+    if (err) {console.log(err)}
+    var db_id = new objectID(user.seminarID);
+    if (db_id == o_id) {
+      var userID = user._id;
+      var seminarID = user.seminarID;
+      res.render('complete', {seminarId: seminarID, userId: userID});
+    }
+    else {
+      console.log('failed')
+    }
+  })
+  })
 });
 
-/* ---- VIEW SEMINARS ---- */
-app.get('/seminars', function(req,res) {
-  var count = 0;
+/*User Detail Management Page - Change/Delete their registration*/
+app.get('/seminar/manage/:userid/', function(req,res) {
+  console.log("made it to edit page")
+})
+app.get('/')
+
+app.post('/register/:id/registerHandle', function(req, res){
+  var o_id = new objectID(req.params.id);
+  if (req.body.userType == 'uts') {
+    res.render('register', {isStudent: true, seminarId : o_id})
+  }
+  else {
+    res.render('register', {isVisitor: true, seminarId : o_id})
+
+  }
+})
+
+app.get('/addUser', isLoggedIn, isAdmin, function(req, res){
   var array = [];
   var cursor = db.collection('seminars').find();
   cursor.forEach(function(doc,err) {
     if (err) return console.log(err)
-    count++;
     array.push(doc)
-
   }, function(){
-        res.render('seminars', {title: 'Seminars', items: array, count});
+        res.render('addUser', {title: 'Add User', items: array});
       });
 });
+
+app.post('/addUser', function(req, res){
+
+  var item = {
+    username: req.body.username,
+    password: req.body.password,
+    accountType: req.body.accountType
+  }
+
+  db.collection('users').insertOne(item, function(err) {
+    if (err) return console.log(err)
+  });
+  console.log('user added');
+  res.redirect('/addUser');
+})
+
+/* ---- VIEW SEMINARS ---- */
+app.get('/seminars', function(req,res) {
+  var array = [];
+  var cursor = db.collection('seminars').find();
+  cursor.forEach(function(doc,err) {
+    if (err) return console.log(err)
+    array.push(doc)
+  }, function(){
+        res.render('seminars', {title: 'Seminars', items: array});
+      });
+});
+
+
 
 
 app.post('/seminars', function(req,res) {
@@ -131,6 +229,8 @@ app.post('/seminars', function(req,res) {
 
   if (button == "register") {
     console.log("found register!");
+    var url = '/register/' + id;
+    res.redirect(url);
   }
   else {
     console.log("found info!");
@@ -140,6 +240,7 @@ app.post('/seminars', function(req,res) {
   }
 });
 
+/*Searches for the seminar via seminar ID */
 app.get('/seminars/:id', function(req,res) {
   console.log("made it to seminars/id")
   var o_id = new objectID(req.params.id);
@@ -156,22 +257,24 @@ app.get('/seminars/:id', function(req,res) {
 
 });
 
-app.get('/new_seminar', function(req,res) {
+app.get('/new_seminar', isLoggedIn, function(req,res) {
   res.render('new_seminar');
 });
 
-app.post('/new_seminar', function(req,res) {
+app.post('/new_seminar', isLoggedIn, function(req,res) {
     db.collection('seminars').countDocuments({},{},function(err, result) {
     if (err) return console.log(err);
 
     var item = {
-      /*id: result,*/
+
       title: req.body.title,
       speaker: req.body.speaker,
       speaker_id: req.body.speaker_id,
       date: req.body.date,
       time: req.body.time,
-      location: req.body.location
+      location: req.body.location,
+      attendee_count: null,
+      attendees: null
     }
 
     db.collection('seminars').insertOne(item, function(err) {
@@ -183,10 +286,35 @@ app.post('/new_seminar', function(req,res) {
   });
 });
 
-app.get("/logout", function(req, res){
+app.get('/management', isLoggedIn, function(req,res) {
+  var isAdmin;
+  if (req.user.accountType == "admin") {
+    console.log("is an admin")
+    isAdmin = true;
+  }
+  res.render('management', { accountType: req.user.accountType, username: req.user.username, isAdmin: isAdmin});
+})
+
+app.get("/logout", isLoggedIn, function(req, res){
      req.logout();
      res.redirect('/');
 });
+
+function isLoggedIn(req, res, next) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.redirect('/login');
+}
+
+function isAdmin(req, res, next) {
+  if (req.user.accountType == 'admin') {
+    return next();
+  }
+  else {
+    return done();
+  }
+}
 
 //Custom 404 page
 app.use(function(req,res,next){
