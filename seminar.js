@@ -154,10 +154,11 @@ app.post('/register/:id/complete', function(req,res) {
     if (db_id == o_id) {
       var userID = user._id;
       var seminarID = user.seminarID;
-      res.render('complete', {seminarId: seminarID, userId: userID});
+      var url = "http://localhost:3000/seminar/manage/" + userID +"?seminarid="+seminarID
+      res.render('complete', {seminarId: seminarID, userId: userID, url : url});
     }
     else {
-      console.log('failed')
+      throw console.log('failed')
     }
   })
   })
@@ -165,8 +166,28 @@ app.post('/register/:id/complete', function(req,res) {
 
 /*User Detail Management Page - Change/Delete their registration*/
 app.get('/seminar/manage/:userid/', function(req,res) {
-  console.log("made it to edit page")
-})
+  var userid = new objectID(req.params.userid);
+  var seminarid = req.query.seminarid;
+  console.log(seminarid);
+  console.log(userid);
+  var item;
+  db.collection('registers').findOne({
+  $and:
+  [{
+    _id : userid
+   },{
+    seminarID : seminarid
+  }]}, function(err, user) {
+    if (err) throw err;
+    if (!user) {
+      console.log('User could not be found, going back to main menu')
+      res.redirect('/')
+    }
+    item = user;
+    res.render('userLinkManagement', {item: item})
+    }
+  )}
+)
 app.get('/')
 
 app.post('/register/:id/registerHandle', function(req, res){
@@ -288,11 +309,16 @@ app.post('/new_seminar', isLoggedIn, function(req,res) {
 
 app.get('/management', isLoggedIn, function(req,res) {
   var isAdmin;
+  var isOrganiser
   if (req.user.accountType == "admin") {
     console.log("is an admin")
     isAdmin = true;
   }
   res.render('management', { accountType: req.user.accountType, username: req.user.username, isAdmin: isAdmin});
+})
+
+app.get('/management/:seminarid/speakers', isLoggedIn, function (req,res) {
+  res.render('speakers')
 })
 
 app.get("/logout", isLoggedIn, function(req, res){
