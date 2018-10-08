@@ -138,6 +138,7 @@ app.get('/register/:id/complete', function(req,res) {
 
 app.post('/register/:id/complete', function(req,res) {
   var o_id = req.params.id;
+  var obj_id = new objectID(req.params.id);
   var item = [];
   var url = '/register/' + o_id + '/complete';
   item = {
@@ -149,17 +150,30 @@ app.post('/register/:id/complete', function(req,res) {
   db.collection('registers').insertOne(item, function(err) {
     if (err) throw err;
   db.collection('registers').findOne({email: req.body.email} , function(err, user) {
-    if (err) {console.log(err)}
+    if (err) {throw console.log(err)}
+    db.collection('seminars').findOne({_id:obj_id}, function(err,seminar) {
+      if (err) { throw console.log(err)}
+      if (!seminar) {
+        throw console.log("seminar could not be found")
+      }
+
+      var id_list = seminar.attendees + " " + user._id;
+      var currentCount = seminar.attendee_count + 1;
+    db.collection('seminars').updateOne({_id:obj_id}, {$set: {attendees:id_list, attendee_count: currentCount}});
+      console.log(1);
     var db_id = new objectID(user.seminarID);
     if (db_id == o_id) {
       var userID = user._id;
       var seminarID = user.seminarID;
       var url = "http://localhost:3000/seminar/manage/" + userID +"?seminarid="+seminarID
+      console.log("hello");
       res.render('complete', {seminarId: seminarID, userId: userID, url : url});
     }
     else {
       throw console.log('failed')
     }
+  })
+
   })
   })
 });
@@ -294,8 +308,8 @@ app.post('/new_seminar', isLoggedIn, function(req,res) {
       date: req.body.date,
       time: req.body.time,
       location: req.body.location,
-      attendee_count: null,
-      attendees: null
+      attendee_count: 0,
+      attendees: ""
     }
 
     db.collection('seminars').insertOne(item, function(err) {
