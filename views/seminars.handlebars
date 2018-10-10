@@ -1,12 +1,44 @@
-<h1>Seminars</h1>
+<head>
+<meta charset="UTF-8">
+  <link rel="stylesheet" type="text/css" href="/style.css">
+</head>
 
+<body>
 
-<table>
+<header>
+<ul>
+  <li><a href="/seminars">UTS SEMINARS</a></li>
+  <li><a href="/login">Login</a></li>
+</ul>
+<header>
+
+<br/>
+<form action = "/seminars">
+Organizer<input type="text" placeholder="organizer name">
+Seminar Location<input type="text" placeholder="seminar location">
+Speaker<input type="text" placeholder="speaker">
+<br/>
+
+Start Date<input type="text" placeholder="start date">
+End Date<input type="text" placeholder="end date">
+<input type="submit" value="Search"/>
+</form>
+<br/>
+<br/>
+<br/>
+<table border="2">
   <tr>
-    <th>Title</th>
-    <th>Speaker</th>
+    <th>Seminar name</th><th>Organizer</th><th>Seminar Location</th><th>Date Range</th><th>Speaker</th><th>Action</th>
   </tr>
   {{#each items}}
+    <tr>
     <td>{{title}}</td>
-    <td>{{speaker}}</td>
+    <td>{{organizer}}</td>
+    <td>{{location}}</td>
+    <td>{{dateRange}}</td>
+    <td>{{speakers}}</td>
+    <td>{{action}}</td>
+    </tr>
   {{/each}}
+</table>
+</body>
