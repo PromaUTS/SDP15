@@ -2,7 +2,8 @@
 <meta charset="UTF-8">
   <link rel="stylesheet" type="text/css" href="/style.css">
 </head>
-
+<h1>Seminars</h1>
+<h3>Are you an admin or organiser? Log in <a href='/management'>here</a></h3>
 <body>
 
 <header>
@@ -28,17 +29,18 @@ End Date<input type="text" placeholder="end date">
 <br/>
 <table border="2">
   <tr>
-    <th>Seminar name</th><th>Organizer</th><th>Seminar Location</th><th>Date Range</th><th>Speaker</th><th>Action</th>
+    <th>Seminar name</th><th>Speaker</th><th>Register</th><th>Info</th>
   </tr>
+  <tr>
+  <form method="POST" action="/seminars">
   {{#each items}}
     <tr>
     <td>{{title}}</td>
-    <td>{{organizer}}</td>
-    <td>{{location}}</td>
-    <td>{{dateRange}}</td>
-    <td>{{speakers}}</td>
-    <td>{{action}}</td>
+    <td>{{speaker}}</td>
+    <td><button value="{{_id}}" name = "register">Register</button></td>
+    <td><button value="{{_id}}" name = "info">Info</button></td>
     </tr>
   {{/each}}
-</table>
+  </form>
+
 </body>
