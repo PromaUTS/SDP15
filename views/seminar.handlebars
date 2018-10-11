@@ -1,1 +1,29 @@
+
 <h1>{{items.title}}</h1>
+{{items.date}}
+{{items.time}}
+{{items.location}}
+{{items.description}}
+<br>
+<br>
+<a href='/seminars'>Go back</a>
+{{#if isOrganiser}}
+Options:
+<form method="POST" action="/editSeminar">
+  <button value = "{{items._id}}" name="edit">Edit Details</button>
+</form>
+
+
+{{#if isEditing}}
+  <form method="POST" action="/confirmEdit">
+    Title<input type="text" name="title">
+    Date<input type="text" name="date">
+    Time<input type="text" name="time">
+    Location<input type="text" name="location">
+    Description<input type="text" name="description">
+
+    <button value="{{seminarID}}">Confirm Changes</button>
+  </form>
+
+{{/if}}
+{{/if}}

@@ -4,21 +4,26 @@
 {{#if isAdmin}}
   <h2>User Management</h2>
   <form method="POST" action="/addUser">
-    Username<input type="text" name="firstname">
+    Username<input type="text" name="username">
     Role<select name="role">
       <option value = "user">Non-UTS student</option>
       <option value = "organiser">Organiser</option>
-      <option value = "host">Host</option>
+      <option value = "speaker">Host</option>
       <option value = "admin">System Admin</option> <br>
     </select> <br>
+    Seminar<select name="seminar">
+      {{#each seminars}}
+      <option value = "{{_id}}">{{title}}</option>
+      {{/each}}
+    </select>
     First Name<input type="text" name="firstname">
     email<input type="text" name="email"> <br>
     Last name<input type="text" name="lastname">
     password<input type="password" name="password">
+
     <br>
     Confirm Password<input type="password" name="confirmedpassword"> <br>
-    Description<br><textarea name="description" rows="8" cols="50">
-    </textarea><br>
+
     <button>Add User</button>
     </form>
 
@@ -32,37 +37,38 @@
 <li><a href="/attendees">Attendee Dashboard</a></li>
 <li><a href="/speakers">Speaker Dashboard</a></li>
 
-<form method="POST" action="/addUser">
-  Seminar Name<input type="text" name="seminarName" placeholder="seminar name">
-  size of seminar<input type="text" name="attendees"placeholder="max number of attendees">
-  Description<input type="text" name="description" placeholder="description">
-  Speaker/s<select>
-              <option value="" disabled selected>Speaker/s</option>
-            </select>
-            <button>ADD</button>
-            <button>REMOVE</button>
+<form method="POST" action="/addSeminar">
+  Seminar Name<input type="text" name="title" >
+  Date<input type="text" name="date">
+  Time<input type="text" name="time">
+  Location<input type="text" name="location">
+  Description<textarea name="description" rows='10' cols='30'> </textarea> <br>
 
-  <button> ADD ATTENDEE </button>
-  <button> CLEAR ALL </button>
+  <button> ADD SEMINAR </button>
   </form>
-
-  <select>
-    <option value="" disabled selected>Sort by</option>
-    <option value = "sortByAttendees">attendees<option>
-  </select>
 
   <table>
     <tr>
       <th>Seminar name</th>
-      <th>Room No</th>
-      <th>Attendees</th>
+      <th>Location</th>
+      <th># of Attendees</th>
+      <th>Time</th>
       <th>Action</th>
     </tr>
-    {{#each items}}
+    <form method="POST" action ="/organiserManagement">
+    <tr>
+    {{#each seminars}}
       <td>{{title}}</td>
-      <td>{{room}}</td>
-      <td>{{attendees}}</td>
-      <td>{{action}}</td>
+      <td>{{location}}</td>
+      <td>{{attendee_count}}</td>
+      <td>{{time}}</td>
+      <td>
+        <button value="{{_id}}" name="viewEdit">VIEW/EDIT</button>
+        <button value="{{_id}}" name="cancel">CANCEL</button>
+        <button value="{{_id}}" name="attendees">ATTENDEES</button>
+        <button value="{{_id}}" name="print">PRINT NAME TAGS</button>
+      </td>
+    </tr>
     {{/each}}
   </table>
   {{/if}}
