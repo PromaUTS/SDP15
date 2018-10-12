@@ -2,18 +2,22 @@
 <meta charset="UTF-8">
   <link rel="stylesheet" type="text/css" href="/style.css">
 </head>
-<h1>Seminars</h1>
-<h3>Are you an admin or organiser? Log in <a href='/management'>here</a></h3>
-<body>
 
+<!--
+<h1>Seminars</h1>
+<h3>Are you an admin or organiser? Log in <a href='/management'>here</a></h3>-->
+
+<body>
 <header>
 <ul>
   <li><a href="/seminars">UTS SEMINARS</a></li>
-  <li><a href="/login">Login</a></li>
+  <li style="float:right"><a href="/management">Login</a></li>
 </ul>
 <header>
 
 <br/>
+    
+<!------------- Beginning form (Add Seminar) ------------->
 <form action = "/seminars">
 Organizer<input type="text" placeholder="organizer name">
 Seminar Location<input type="text" placeholder="seminar location">
@@ -27,6 +31,8 @@ End Date<input type="text" placeholder="end date">
 <br/>
 <br/>
 <br/>
+    
+<!------------- Restults table ---------------------------->    
 <table border="2">
   <tr>
     <th>Seminar name</th><th>Speaker</th><th>Register</th><th>Info</th>
