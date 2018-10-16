@@ -1,5 +1,24 @@
-Hello {{item.firstname}}, here are your current registration details.
+{{#if isEdit}}
+<form method="POST" action="/changeDetails">
+  First Name<input type="text" name="firstName">
+  Last Name<input type="text" name="lastName">
+  Email<input type="text" name="attendeeEmail">
+  <button> Change Details </button>
+  </form>
 
-{{item.firstname}}
-{{item.lastname}}
-{{item.email}}
+
+{{else}}
+    Hello {{item.firstname}}, here are your current registration details. <br>
+    <br>
+
+
+    First Name: {{item.firstname}} <br>
+    Last Name: {{item.lastname}} <br>
+    Email: {{item.email}} <br>
+    <br>
+    Options:
+    <form method="POST" action="/editSelf">
+      <button value = "{{item.id}}"name="edit">Edit Details</button>
+      <button value="{{item._id}}" name="remove">Unregister</button>
+      </form>
+{{/if}}

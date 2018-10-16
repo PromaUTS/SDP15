@@ -8,18 +8,14 @@
 <li><a href="/speakers">Speaker Dashboard</a></li>
 
 <form method="POST" action="/addAttendee">
-  Attendee Email<input type="text" name="attendeeEmail" placeholder="attendee emaill address...">
+  Attendee Email<input type="text" name="attendeeEmail">
   First Name<input type="text" name="firstName" placeholder="first name">
   Last Name<input type="text" name="lastName" placeholder="last name">
+  <input type="hidden "name="seminar" value= "{{..//seminarID}}">
+  <input type="hidden" name="hidden" value="true" >
   <button> ADD ATTENDEE </button>
-  <button> CLEAR ALL </button>
   </form>
 
-  <select>
-    <option value="" disabled selected>Sort by</option>
-    <option value = "sortByFirstName">First Name<option>
-    <option value = "sortByLastName">Last Name<option>
-  </select>
 
   <table>
     <tr>
@@ -28,4 +24,14 @@
       <th>Email</th>
       <th>Action</th>
     </tr>
+    <form method="POST" action ="/removeUser">
+    {{#each array}}
+    <tr>
+      <td>{{firstname}}</td>
+      <td>{{lastname}}</td>
+      <td>{{email}}</td>
+      <td><button value= "{{../seminarID}}" name="{{_id}}">DELETE</button></td>
+    </tr>
+    {{/each}}
+  </form>
   </table>
