@@ -458,7 +458,7 @@ app.post('/addSeminar', isLoggedIn, function(req,res) {
       location: req.body.location,
       description: req.body.description,
       attendee_count: 0,
-      attendees: [];
+      attendees: []
     }
     console.log("read though form")
     db.collection('seminars').insertOne(item, function(err) {
