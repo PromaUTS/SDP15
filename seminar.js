@@ -93,6 +93,12 @@ app.post('/login',
   })
 );
 
+app.get('/logout', isLoggedIn, function(req, res){
+  console.log("made it to logout");
+  req.logout();
+  res.redirect('/');
+});
+
 app.get('/register/:id', function(req, res){
     var o_id = new objectID(req.params.id);
 
@@ -637,10 +643,6 @@ app.get('/management/:seminarid/speakers', isLoggedIn, function (req,res) {
   res.render('speakers')
 })
 
-app.get("/logout", isLoggedIn, function(req, res){
-     req.logout();
-     res.redirect('/');
-});
 
 function isLoggedIn(req, res, next) {
   if (req.isAuthenticated()) {
