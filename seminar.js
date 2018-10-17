@@ -8,6 +8,8 @@ const passportLocalMongoose = require('passport-local-mongoose');
 const passport = require('passport');
 const flash = require('connect-flash');
 const objectID = require('mongodb').ObjectID;
+const fs = require('fs');
+const PDFDocument = require('pdfkit');
 var db;
 
 var handlebars = require('express3-handlebars').create({ defaultLayout:'main' });
@@ -113,12 +115,40 @@ app.get('/register/:id', function(req, res){
       })
 });
 
+/*CHECKS WHETHER USER IS ALREADY REGISTERED FOR THIS SEMINAR*/
+app.post('/register/:id/checkStatus', function(req,res) {
+  var o_id = req.params.id;
+  db.collection('registers').findOne({
+    $and:
+    [{
+      firstname : req.body.firstname
+     },{
+      lastname : req.body.lastname
+    },{
+      email : req.body.email
+    }, {
+      seminars : o_id
+    }
+  ]}, function(err, found) {
+    if (err) throw console.log(err);
+    if (found) {
+
+      console.log('You\'ve already registered for this seminar');
+      req.flash("error_msg", "You've already registered!");
+      res.redirect('/seminars');
+    }
+    if (!found) {
+      res.render('register', {notRegistered: true, seminarId: o_id})
+    }
+    }
+  )
+})
 
 
 app.post('/register/:id/utsLogin', function(req, res) {
   var o_id = req.params.id;
   var url = '/register/' + o_id;
-  db.collection('students').findOne({studentId: req.body.studentId} , function(err, user) {
+  db.collection('students').findOne({studentID: req.body.studentID} , function(err, user) {
     if (err) {
       throw console.log(err);
     }
@@ -407,6 +437,22 @@ app.post('/addUser', function(req, res) {
   }
 })
 
+function getSeminarList(query, callback) {
+  var array = [];
+  console.log("query:",query);
+  console.log("field",field)
+  var cursor = db.collection('seminars').find(query);
+  cursor.forEach(function(doc,err) {
+    if (err) return console.log(err)
+    console.log("doc:",doc)
+    array.push(doc)
+  },
+  function(){
+    console.log("completed getSeminarList function")
+    callback(null,array);
+  })
+}
+
 
 /* ---- VIEW SEMINARS ---- */
 app.get('/seminars', function(req,res) {
@@ -416,10 +462,70 @@ app.get('/seminars', function(req,res) {
     if (err) return console.log(err)
     array.push(doc)
   }, function(){
-        res.render('seminars', {title: 'Seminars', items: array});
+        res.render('seminars', {title: 'Seminars', items: array, isSearched: false});
       });
 });
 
+app.post('/reset', function (req,res) {
+  console.log("resetting");
+  res.redirect('/seminars')
+})
+
+app.post('/searchSeminar', function(req,res) {
+  var array;
+  var choice = req.body.selection;
+  var query = {};
+  console.log("made it to search seminar")
+  console.log(choice);
+
+  if (choice == 'organiser') {
+    field = 'organiser';
+    query[field] = req.body.input;
+    getSeminarList(query, function(err, array) {
+      if (err) throw console.log(err);
+      if (array) {
+      console.log("obtained array");
+      res.render('seminars', {items: array, isSearched: true})
+    }
+    });
+  }
+
+  if (choice == 'room') {
+    field = 'location';
+    query[field] = req.body.input;
+    getSeminarList(query, function(err, array) {
+      if (err) throw console.log(err);
+      if (array) {
+      console.log("obtained array");
+      res.render('seminars', {items: array, isSearched: true})
+    }
+    });
+  }
+
+  if (choice =='date') {
+    field ='date';
+    query[field] = req.body.input;
+    getSeminarList(query, function(err, array) {
+      if (err) throw console.log(err);
+      if (array) {
+      console.log("obtained array");
+      res.render('seminars', {items: array, isSearched: true})
+    }
+    });
+  }
+  if (choice =='speaker') {
+    field = 'speaker';
+    query[field] = req.body.input;
+    getSeminarList(query, function(err, array) {
+      if (err) throw console.log(err);
+      if (array) {
+      console.log("obtained array");
+      res.render('seminars', {items: array, isSearched: true})
+    }
+    });
+  }
+
+})
 
 
 
@@ -441,6 +547,7 @@ app.post('/seminars', function(req,res) {
     res.redirect(url);
   }
 });
+
 
 /*Searches for the seminar via seminar ID */
 app.get('/seminars/:id', function(req,res) {
@@ -472,8 +579,8 @@ app.post('/addSeminar', isLoggedIn, function(req,res) {
     var item = {
 
       title: req.body.title,
-      speaker: "",
-      speaker_id: "",
+      organiser: req.user.firstname +" "+req.user.lastname,
+      speaker: req.body.speaker,
       date: req.body.date,
       time: req.body.time,
       location: req.body.location,
@@ -508,21 +615,33 @@ app.post('/organiserManagement', isLoggedIn, isOrganiser, function(req,res) {
       if (seminar) {
         var doc = seminar;
       }
-      res.render('seminar', {seminar: doc, isOrganiser: true})
+      res.render('seminar', {items: doc, isOrganiser: true})
     })
   }
   if (button == 'cancel') {
     db.collection('seminars').deleteOne( {_id: o_id}, function(err, found) {
       if (err) throw console.log(err)
-      if (!found) {console.log("cancel was not successful"); req.flash("error_msg", "Could not cancel Seminar");}
-      res.redirect("/management");
-    })
-  }
+      if (!found) {
+        console.log("cancel was not successful"); req.flash("error_msg", "Could not cancel Seminar");
+      }
+      var cursor = db.collection('registers').find( {seminars: seminarID });
+      cursor.forEach(function(user,err) {
+        if (err) throw console.log(err);
+        var index = user.seminars.indexOf(seminarID);
+        var seminarArr = user.seminars;
+        seminarArr.splice(index,1);
+        db.collection('registers').updateOne({_id: user._id}, {$set: {seminars: seminarArr}})
+      }, function() {
+        res.redirect("/management");
+      });
+      })
+    }
+
   if (button == 'attendees') {
     console.log(seminarID);
     var cursor = db.collection('registers').find({seminars: seminarID});
     cursor.forEach(function(doc,err) {
-      if (err) return console.log(err)
+      if (err) throw console.log(err)
       attendeeArr.push(doc)
       console.log("attendeearray:",attendeeArr)
     }, function() {
@@ -535,31 +654,66 @@ app.post('/organiserManagement', isLoggedIn, isOrganiser, function(req,res) {
     })
     }
 
+  if (button == 'print') {
+    var pdfDoc = new PDFDocument;
+    pdfDoc.fontSize(20);
+    pdfDoc.pipe(fs.createWriteStream('nametags.pdf'));
+    var cursor = db.collection('registers').find({seminars: seminarID});
+    cursor.forEach(function(doc,err) {
+      if (err) throw console.log(err)
+      pdfDoc.text(doc.firstname + doc.lastname);
+      pdfDoc.moveDown();
+    })
+  }
   })
+
 
 app.post('/editSeminar', isLoggedIn, isOrganiser, function(req,res) {
   var button = Object.keys(req.body);
   var seminarID = req.body[button[0]];
-  var o_id = req.body[button[0]];
-  db.collection()
-  res.render('seminar',{isEditing: true })
-})
-
-/*app.post('/confirmEdit', isLoggedIn, isOrganiser, function (req,res) {
-  var button = Object.keys(req.body);
-  var seminarID = req.body[button[0]];
   var o_id = new objectID(seminarID);
-
-  db.collection('seminars').updateOne({_id:o_id}, {$set: {: regArr}}); {
-
-    if (!seminar) {
-      console.log("seminar not found");
+  console.log(o_id);
+  var doc;
+  db.collection('seminars').findOne({_id: o_id}, function(err, found) {
+    if (err) throw console.log(err)
+    if (found) {
+      console.log("seminar was found")
+      doc = found;
+      res.render('seminar',{isEditing: true, items: doc });
     }
-    if (seminar) {
-      db.collection('seminar')
+    else {
+      console.log('seminar couldnt be found');
+      res.redirect('/management');
     }
   })
-})*/
+})
+
+app.post('/confirmEdit', isLoggedIn, isOrganiser, function (req,res) {
+  var button = Object.keys(req.body);
+  var seminarID = req.body.submit;
+  var o_id = new objectID(seminarID)
+  console.log("seminarID:", seminarID);
+  console.log("button value",req.body.submit);
+
+  /*var o_id = new objectID(seminarID);*/
+
+  db.collection('seminars').updateOne({_id:o_id},
+    {
+      $set: {
+        title: req.body.title,
+        date: req.body.date,
+        time: req.body.time,
+        location: req.body.location,
+        description: req.body.description
+      }
+    }, function(err, success) {
+      if (err) throw console.log(err);
+      if (success) {
+        console.log("SEMINAR WAS UPDATED!!!")
+      }
+      res.redirect('/management');
+    });
+  })
 
 app.post('/removeUser', isLoggedIn, isOrganiser, function(req,res) {
   var button = Object.keys(req.body);
@@ -613,6 +767,10 @@ app.post('/removeUser', isLoggedIn, isOrganiser, function(req,res) {
 
 
 app.get('/management', isLoggedIn, function(req,res) {
+  var today = new Date();
+  var day = today.getDate();
+  var month = today.getMonth()+1;
+  var year = today.getFullYear();
   var isAdmin;
   var isOrganiser;
   if (req.user.accountType == "admin") {
@@ -624,7 +782,6 @@ app.get('/management', isLoggedIn, function(req,res) {
       isOrganiser= true;
   }
 
-
   var array = [];
   var cursor = db.collection('seminars').find();
   cursor.forEach(function(doc,err) {
@@ -634,7 +791,7 @@ app.get('/management', isLoggedIn, function(req,res) {
     }, function() {
     res.render('management', { accountType: req.user.accountType,
       username: req.user.username, seminars: array, isAdmin: isAdmin,
-      isOrganiser: isOrganiser});
+      isOrganiser: isOrganiser, day: day, month: month, year: year});
   })
 })
 

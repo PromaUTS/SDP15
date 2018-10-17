@@ -16,28 +16,36 @@
 <header>
 
 <br/>
-    
-<!------------- Beginning form (Add Seminar) ------------->
-<form action = "/seminars">
-Organizer<input type="text" placeholder="organizer name">
-Seminar Location<input type="text" placeholder="seminar location">
-Speaker<input type="text" placeholder="speaker">
-<br/>
 
-Start Date<input type="text" placeholder="start date">
-End Date<input type="text" placeholder="end date">
+<!------------- Beginning form (Search Seminar) ------------->
+Filter by searching:
+<br>
+<form method="POST" action = "/searchSeminar">
+  <select name = "selection">
+    <option value="organiser">Organiser</option>
+    <option value="room">Room</option>
+    <option value="date">Date</option>
+    <option value="speaker">Speaker</option>
+  </select>
+  Query <input type="text" name="input">
+  <br>
 <input type="submit" value="Search"/>
 </form>
 <br/>
 <br/>
 <br/>
-    
-<!------------- Restults table ---------------------------->    
+{{#if isSearched}}
+<form method="POST" action ="/reset">
+  <button>Clear Filter</button>
+</form>
+{{/if}}
+<!------------- Results table ---------------------------->
 <table border="2">
   <tr>
     <th>Seminar name</th><th>Speaker</th><th>Register</th><th>Info</th>
   </tr>
   <tr>
+
   <form method="POST" action="/seminars">
   {{#each items}}
     <tr>
