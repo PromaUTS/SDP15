@@ -16,9 +16,28 @@
     Last Name: {{item.lastname}} <br>
     Email: {{item.email}} <br>
     <br>
+    <table border="2">
+      <tr>
+        <th>Seminar name</th><th>Speaker</th><th>Currently</th><th>Action</th>
+      </tr>
+      <tr>
+
+    <form method="POST" action="/changeStatus">
+    {{#each seminars}}
+      <tr>
+      <td>{{title}}</td>
+      <td>{{speaker}}</td>
+      <td>{{attendees.[index].status}}</td>
+      <td><select name = "selection">
+            <option value="register">Register</option>
+            <option value="interest">Show Interest</option>
+            <option value="remove">Unregister</option>
+          </select>
+          <button name="submit" value ="{{_id}}">Submit</button></td>
+      </tr>
+    {{/each}}
     Options:
     <form method="POST" action="/editSelf">
-      <button value = "{{item.id}}"name="edit">Edit Details</button>
-      <button value="{{item._id}}" name="remove">Unregister</button>
+      <button value = "{{item._id}}" name="edit">Edit Details</button>
       </form>
 {{/if}}

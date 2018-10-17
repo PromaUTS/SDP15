@@ -8,6 +8,8 @@ const passportLocalMongoose = require('passport-local-mongoose');
 const passport = require('passport');
 const flash = require('connect-flash');
 const objectID = require('mongodb').ObjectID;
+const fs = require('fs');
+const PDFDocument = require('pdfkit');
 var db;
 
 var handlebars = require('express3-handlebars').create({ defaultLayout:'main' });
@@ -113,12 +115,40 @@ app.get('/register/:id', function(req, res){
       })
 });
 
+/*CHECKS WHETHER USER IS ALREADY REGISTERED FOR THIS SEMINAR*/
+app.post('/register/:id/checkStatus', function(req,res) {
+  var o_id = req.params.id;
+  db.collection('registers').findOne({
+    $and:
+    [{
+      firstname : req.body.firstname
+     },{
+      lastname : req.body.lastname
+    },{
+      email : req.body.email
+    }, {
+      seminars : o_id
+    }
+  ]}, function(err, found) {
+    if (err) throw console.log(err);
+    if (found) {
+
+      console.log('You\'ve already registered/shown interest for this seminar');
+      req.flash("error_msg", "You've already registered or shown interest! Sending you back to the home page!");
+      res.redirect('/seminars');
+    }
+    if (!found) {
+      res.render('register', {notRegistered: true, seminarId: o_id})
+    }
+    }
+  )
+})
 
 
 app.post('/register/:id/utsLogin', function(req, res) {
   var o_id = req.params.id;
   var url = '/register/' + o_id;
-  db.collection('students').findOne({studentId: req.body.studentId} , function(err, user) {
+  db.collection('students').findOne({studentID: req.body.studentID} , function(err, user) {
     if (err) {
       throw console.log(err);
     }
@@ -148,60 +178,71 @@ app.get('/register/:id/complete', function(req,res) {
 })
 
 app.post('/register/:id/complete', function(req,res) {
-  var o_id = req.params.id;
-  var obj_id = new objectID(req.params.id);
+  var attendeeObj;
+  var o_id = req.params.id; // USER ID
+  var obj_id = new objectID(req.params.id); // SEMINAR ID
   var item = [];
   var url = '/register/' + o_id + '/complete';
+  var seminarObj = [{seminarID: o_id, status: req.body.signType}];
+
+  var attendeeCount;
+
   item = {
     firstname: req.body.firstname,
     lastname: req.body.lastname,
     email: req.body.email,
-    seminars: o_id.toString()
+    seminars: seminarObj
   }
-  db.collection('registers').insertOne(item, function(err) {
-    if (err) throw console.log(err);
+
   db.collection('registers').findOne({email: req.body.email} , function(err, user) {
     if (err) {throw console.log(err)}
-    db.collection('seminars').findOne({_id:obj_id}, function(err,seminar) {
-      if (err) { throw console.log(err)}
-      if (!seminar) {
-        req.flash("error_msg", "Seminar could not be found");
-        throw console.log("seminar could not be found")
-      }
-      console.log("neil look it made it ")
-      var count = seminar.attendee_count + 1;
-      var userSemArr = [user.seminars.slice()]; /*userSemArr appends the seminar ID to be added onto the register's seminars field*/
-      userSemArr.push(req.body.seminar);
-      var semArr = [seminar.attendees.slice()]; /*semArr appends the register ID to be added onto the seminar's registers field*/
-      semArr.push(user._id);
-      var index = userSemArr.indexOf(obj_id);
-      db.collection('registers').updateOne( {email: req.body.email}, {$set: {seminars: userSemArr}})
-      db.collection('seminars').updateOne( {_id: o_id}, {$set: {attendees: semArr, attendee_count: count}}, function(err,done) {
-        if (done) {
-          console.log(semArr)
-          console.log("seminar was updated")
-          req.flash("success_msg", "Seminar was updated");
-          console.log(done.attendees)
+    if (!user) {
+      db.collection('registers').insertOne(item, function(err) {
+        if (err) throw console.log(err);
+      })
+    }
+    if (user) {
+      var currentUserArr = [user.seminars.slice()];
+      currentUserArr.push(seminarObj);
+      db.collection('registers').updateOne({_id:user._id}, {$set:{seminars:currentUserArr}}, function(err,success){
+        if (err) throw console.log(err)
+        if (success) {
+          console.log("user's seminar array was successfully updated");
         }
       })
-      db.collection('registers').findOne( {seminars: o_id}, function(err,found) {
+    }
+    })
+    db.collection('seminars').findOne({_id: obj_id}, function(err,seminar) {
       if (err) throw console.log(err)
-      if (found)
-      {
-        var userID = user._id;
-        var seminarID = seminar._id;
-        var url = "http://localhost:3000/seminar/manage/" + userID +"?seminarid="+seminarID
-        console.log("hello");
-        res.render('complete', {seminarId: seminarID, userId: userID, url : url});
-      }
 
-      else {
-        throw console.log('comparison failed')
+      if (seminar) {
+        console.log('found seminar');
+      db.collection('registers').findOne({email: req.body.email}, function(err, user) {
+        if (err) throw console.log(err);
+        if (user) {
+        var attendeeObj = [{attendeeID: user._id.toString(), status: req.body.signType}];
+        var currentSemArr = [seminar.attendees.slice()];
+        attendeeCount = seminar.attendee_count + 1;
+        currentSemArr.push(attendeeObj);
+        db.collection('seminars').updateOne({_id: obj_id}, {$set:{attendees:currentSemArr, attendee_count: attendeeCount}}, function(err,success){
+          if (err) throw console.log(err)
+          if (success) {
+            console.log("Seminar array was successfully updated");
+            db.collection('registers').findOne( {seminars: {$elemMatch: {seminarID:o_id}}}, function(err,found) {
+              if (err) throw console.log(err)
+              if (found)
+              {
+                var userID = user._id;
+                var seminarID = seminar._id;
+                var url = "http://localhost:3000/seminar/manage/" + userID +"?seminarid="+seminarID
+                res.render('complete', {seminarId: seminarID, userId: userID, url : url});
+              }
+          })
+        }
+      })
       }
     })
-  })
-
-  })
+  }
   })
 })
 
@@ -237,6 +278,9 @@ app.post('/editSelf', function(req,res) {
 
 /*User Detail Management Page - Change/Delete their registration*/
 app.get('/seminar/manage/:userid/', function(req,res) {
+  var type;
+  var array = [];
+  var suserid = req.params.userid;
   var userid = new objectID(req.params.userid);
   var seminarid = req.query.seminarid;
   console.log(seminarid);
@@ -247,7 +291,7 @@ app.get('/seminar/manage/:userid/', function(req,res) {
   [{
     _id : userid
    },{
-    seminars : seminarid
+    seminars : {$elemMatch: {seminarID:seminarid}}
   }]}, function(err, user) {
     if (err) throw console.log(err);
     if (!user) {
@@ -256,12 +300,36 @@ app.get('/seminar/manage/:userid/', function(req,res) {
       console.log(seminarid)
       res.redirect('/')
     }
-    item = user;
-    res.render('userLinkManagement', {item: item})
+    var cursor = db.collection('seminars').find({attendees: {$elemMatch: {attendeeID: suserid}}});
+    cursor.forEach(function(doc,err) {
+      console.log(doc);
+      if (err) throw console.log(err)
+      array.push(doc);
+      type = doc.attendees[0].status;
+    }, function() {
+      item = user;
+      res.render('userLinkManagement', {item: item, seminars:array, type:type})
+    })
     }
   )}
 )
-app.get('/')
+
+/*app.post('/changeStatus', function(req,res) {
+  var id = req.body.submit;
+  var s_id = new objectID(id); // seminarID with type objectID
+  var option = req.body.selection;
+  var seminarsObjArr = [{}]
+  db.collection
+  db.collection('registers').findOneAndUpdate(
+    {seminars: {$elemMatch: {seminarID:id, }
+    if (err) throw console.log(err);
+    if (success) {
+      console.log("SUCCESS!!")
+      res.redirect("/seminars");
+    }
+  }})
+})*/
+
 
 app.post('/register/:id/registerHandle', function(req, res){
   var o_id = new objectID(req.params.id);
@@ -407,6 +475,22 @@ app.post('/addUser', function(req, res) {
   }
 })
 
+function getSeminarList(query, callback) {
+  var array = [];
+  console.log("query:",query);
+  console.log("field",field)
+  var cursor = db.collection('seminars').find(query);
+  cursor.forEach(function(doc,err) {
+    if (err) return console.log(err)
+    console.log("doc:",doc)
+    array.push(doc)
+  },
+  function(){
+    console.log("completed getSeminarList function")
+    callback(null,array);
+  })
+}
+
 
 /* ---- VIEW SEMINARS ---- */
 app.get('/seminars', function(req,res) {
@@ -416,10 +500,70 @@ app.get('/seminars', function(req,res) {
     if (err) return console.log(err)
     array.push(doc)
   }, function(){
-        res.render('seminars', {title: 'Seminars', items: array});
+        res.render('seminars', {title: 'Seminars', items: array, isSearched: false});
       });
 });
 
+app.post('/reset', function (req,res) {
+  console.log("resetting");
+  res.redirect('/seminars')
+})
+
+app.post('/searchSeminar', function(req,res) {
+  var array;
+  var choice = req.body.selection;
+  var query = {};
+  console.log("made it to search seminar")
+  console.log(choice);
+
+  if (choice == 'organiser') {
+    field = 'organiser';
+    query[field] = req.body.input;
+    getSeminarList(query, function(err, array) {
+      if (err) throw console.log(err);
+      if (array) {
+      console.log("obtained array");
+      res.render('seminars', {items: array, isSearched: true})
+    }
+    });
+  }
+
+  if (choice == 'room') {
+    field = 'location';
+    query[field] = req.body.input;
+    getSeminarList(query, function(err, array) {
+      if (err) throw console.log(err);
+      if (array) {
+      console.log("obtained array");
+      res.render('seminars', {items: array, isSearched: true})
+    }
+    });
+  }
+
+  if (choice =='date') {
+    field ='date';
+    query[field] = req.body.input;
+    getSeminarList(query, function(err, array) {
+      if (err) throw console.log(err);
+      if (array) {
+      console.log("obtained array");
+      res.render('seminars', {items: array, isSearched: true})
+    }
+    });
+  }
+  if (choice =='speaker') {
+    field = 'speaker';
+    query[field] = req.body.input;
+    getSeminarList(query, function(err, array) {
+      if (err) throw console.log(err);
+      if (array) {
+      console.log("obtained array");
+      res.render('seminars', {items: array, isSearched: true})
+    }
+    });
+  }
+
+})
 
 
 
@@ -441,6 +585,7 @@ app.post('/seminars', function(req,res) {
     res.redirect(url);
   }
 });
+
 
 /*Searches for the seminar via seminar ID */
 app.get('/seminars/:id', function(req,res) {
@@ -472,8 +617,8 @@ app.post('/addSeminar', isLoggedIn, function(req,res) {
     var item = {
 
       title: req.body.title,
-      speaker: "",
-      speaker_id: "",
+      organiser: req.user.firstname +" "+req.user.lastname,
+      speaker: req.body.speaker,
       date: req.body.date,
       time: req.body.time,
       location: req.body.location,
@@ -508,21 +653,33 @@ app.post('/organiserManagement', isLoggedIn, isOrganiser, function(req,res) {
       if (seminar) {
         var doc = seminar;
       }
-      res.render('seminar', {seminar: doc, isOrganiser: true})
+      res.render('seminar', {items: doc, isOrganiser: true})
     })
   }
   if (button == 'cancel') {
     db.collection('seminars').deleteOne( {_id: o_id}, function(err, found) {
       if (err) throw console.log(err)
-      if (!found) {console.log("cancel was not successful"); req.flash("error_msg", "Could not cancel Seminar");}
-      res.redirect("/management");
-    })
-  }
+      if (!found) {
+        console.log("cancel was not successful"); req.flash("error_msg", "Could not cancel Seminar");
+      }
+      var cursor = db.collection('registers').find( {seminars: {$elemMatch: {seminarID: seminarID }}});
+      cursor.forEach(function(user,err) {
+        if (err) throw console.log(err);
+        var index = user.seminars.indexOf(seminarID);
+        var seminarArr = user.seminars;
+        seminarArr.splice(index,1);
+        db.collection('registers').updateOne({_id: user._id}, {$set: {seminars: seminarArr}})
+      }, function() {
+        res.redirect("/management");
+      });
+      })
+    }
+
   if (button == 'attendees') {
     console.log(seminarID);
     var cursor = db.collection('registers').find({seminars: seminarID});
     cursor.forEach(function(doc,err) {
-      if (err) return console.log(err)
+      if (err) throw console.log(err)
       attendeeArr.push(doc)
       console.log("attendeearray:",attendeeArr)
     }, function() {
@@ -535,31 +692,87 @@ app.post('/organiserManagement', isLoggedIn, isOrganiser, function(req,res) {
     })
     }
 
+  if (button == 'print') {
+    var x = 100;
+    var y = 50;
+    var counter = 0;
+    var pdfDoc = new PDFDocument;
+    pdfDoc.fontSize(20);
+    pdfDoc.pipe(fs.createWriteStream('nametags.pdf'));
+    var cursor = db.collection('registers').find({seminars: seminarID});
+    cursor.forEach(function(doc,err) {
+      if (err) throw console.log(err)
+      counter++;
+      if (counter == 1)
+      {
+        pdfDoc.text(doc.firstname + " "+doc.lastname, x, y);
+        x += 300;
+      }
+      if (counter == 2)
+      {
+        pdfDoc.text(doc.firstname + " "+doc.lastname, x, y);
+        x = 100;
+        y += 100;
+        counter = 0;
+      }
+    }, function() {
+      /*pdfDoc.text("bob saget", leftx, lefty) /*{
+        width: 200, height: 100, align:'center'});*/
+      /*pdfDoc.moveDown();
+      pdfDoc.text("bob saget", 100, 200){width: 200, align:'center'});*/
+      pdfDoc.end();
+      res.redirect('/management');
+    })
+  }
   })
+
 
 app.post('/editSeminar', isLoggedIn, isOrganiser, function(req,res) {
   var button = Object.keys(req.body);
   var seminarID = req.body[button[0]];
-  var o_id = req.body[button[0]];
-  db.collection()
-  res.render('seminar',{isEditing: true })
-})
-
-/*app.post('/confirmEdit', isLoggedIn, isOrganiser, function (req,res) {
-  var button = Object.keys(req.body);
-  var seminarID = req.body[button[0]];
   var o_id = new objectID(seminarID);
-
-  db.collection('seminars').updateOne({_id:o_id}, {$set: {: regArr}}); {
-
-    if (!seminar) {
-      console.log("seminar not found");
+  console.log(o_id);
+  var doc;
+  db.collection('seminars').findOne({_id: o_id}, function(err, found) {
+    if (err) throw console.log(err)
+    if (found) {
+      console.log("seminar was found")
+      doc = found;
+      res.render('seminar',{isEditing: true, items: doc });
     }
-    if (seminar) {
-      db.collection('seminar')
+    else {
+      console.log('seminar couldnt be found');
+      res.redirect('/management');
     }
   })
-})*/
+})
+
+app.post('/confirmEdit', isLoggedIn, isOrganiser, function (req,res) {
+  var button = Object.keys(req.body);
+  var seminarID = req.body.submit;
+  var o_id = new objectID(seminarID)
+  console.log("seminarID:", seminarID);
+  console.log("button value",req.body.submit);
+
+  /*var o_id = new objectID(seminarID);*/
+
+  db.collection('seminars').updateOne({_id:o_id},
+    {
+      $set: {
+        title: req.body.title,
+        date: req.body.date,
+        time: req.body.time,
+        location: req.body.location,
+        description: req.body.description
+      }
+    }, function(err, success) {
+      if (err) throw console.log(err);
+      if (success) {
+        console.log("SEMINAR WAS UPDATED!!!")
+      }
+      res.redirect('/management');
+    });
+  })
 
 app.post('/removeUser', isLoggedIn, isOrganiser, function(req,res) {
   var button = Object.keys(req.body);
@@ -613,6 +826,10 @@ app.post('/removeUser', isLoggedIn, isOrganiser, function(req,res) {
 
 
 app.get('/management', isLoggedIn, function(req,res) {
+  var today = new Date();
+  var day = today.getDate();
+  var month = today.getMonth()+1;
+  var year = today.getFullYear();
   var isAdmin;
   var isOrganiser;
   if (req.user.accountType == "admin") {
@@ -624,7 +841,6 @@ app.get('/management', isLoggedIn, function(req,res) {
       isOrganiser= true;
   }
 
-
   var array = [];
   var cursor = db.collection('seminars').find();
   cursor.forEach(function(doc,err) {
@@ -634,7 +850,7 @@ app.get('/management', isLoggedIn, function(req,res) {
     }, function() {
     res.render('management', { accountType: req.user.accountType,
       username: req.user.username, seminars: array, isAdmin: isAdmin,
-      isOrganiser: isOrganiser});
+      isOrganiser: isOrganiser, day: day, month: month, year: year});
   })
 })
 

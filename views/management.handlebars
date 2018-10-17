@@ -32,6 +32,7 @@
 
 {{/if}}
 
+
 {{#if isOrganiser}}
 <h2>Seminar Management</h2>
 <li><a href="/management">Seminar Dashboard</a></li>
@@ -40,9 +41,10 @@
 
 <form method="POST" action="/addSeminar">
   Seminar Name<input type="text" name="title" >
-  Date<input type="text" name="date">
+  Date<input type="date" name="date" min="{{day}}-{{month}}-{{year}}">
   Time<input type="text" name="time">
   Location<input type="text" name="location">
+  Speaker<input type="text" name="speaker">
   Description<textarea name="description" rows='10' cols='30'> </textarea> <br>
 
   <button> ADD SEMINAR </button>

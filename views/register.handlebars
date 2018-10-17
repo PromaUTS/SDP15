@@ -1,16 +1,23 @@
 
 {{#if isConfirmed}}
 <form method="POST" action="/register/{{seminarId}}/complete">
-  <input type="text" name="firstname">First Name</input>
-  <input type="text" name="lastname">Last Name</input>
-  <input type="text" name="email" >Email</input>
-  <button> Submit </button>
+  First Name<input type="text" name="firstname"></input>
+  Last Name<input type="text" name="lastname"></input>
+  Email<input type="text" name="email"></input>
+  <br>
+  Sign Up Type
+  <br>
+  <input type="radio" name="signType" value="registered">Register<br>
+  <input type="radio" name="signType" value="interested">Show Interest<br>
+  <br>
+  <button>Submit</button>
 {{else}}
+
 
 {{#if isStudent}}
 <p>Log in to confirm you are a student
 <form method="POST" action="/register/{{seminarId}}/utsLogin">
-  <input type="text" name="studentId" placeholder="Student ID">
+  <input type="text" name="studentID" placeholder="Student ID">
   <input type="password" name="password" placeholder="password">
   <button> Submit </button>
 </form>
@@ -23,12 +30,25 @@
   <p>Send an email to the organiser to register
 
 {{else}}
+
+{{#if notRegistered}}
   <form method="POST" action="/register/{{seminarId}}/registerHandle">
     <p>Are you a UTS student or Visitor?</p>
     <input type="radio" name="userType" value="uts">UTS Student<br>
     <input type="radio" name="userType" value="visitor">Visitor<br>
     <button> Submit </button>
   </form>
+
+{{else}}
+
+<form method="POST" action="/register/{{seminarId}}/checkStatus">
+  <p>Enter your name and email to check if you're already registered</p>
+  First Name <input type="text" name="firstname">
+  Last Name <input type="text" name="lastname">
+  Email <input type="text" name="email">
+  <button> Submit </button>
+</form>
+{{/if}}
 {{/if}}
 {{/if}}
 {{/if}}
