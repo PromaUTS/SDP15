@@ -1,7 +1,10 @@
 <!doctype html>
 <html>
   <head>
+    <link rel="stylesheet" href="/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="/css/bootstrap.css"/>
     <title>Seminar System</title>
+    
       {{#if showTests}}
         <link rel="stylesheet" href="/vendor/mocha.css">
       {{/if}}
@@ -9,8 +12,18 @@
       <script src="//code.jquery.com/jquery-2.0.2.min.js"></script>
 
   </head>
-  <body>
+  <body></body>
+        {{#if success_msg}}
+              <div class="alert alert-success">{{this.success_msg}}</div>
+        {{/if}}
+        {{#if error_msg}}
+              <div class="alert alert-danger">{{this.error_msg}}</div>
+        {{/if}}
+          {{#if error}}
+              <div class="alert alert-danger">{{this.error}}</div>
+        {{/if}}
     {{{body}}}
+    
 
     {{#if showTests}}
       <div id="mocha"></div>

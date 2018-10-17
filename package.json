@@ -4,8 +4,8 @@
   "description": "Software Development Project - UTS Seminar System",
   "main": "seminar.js",
   "scripts": {
-  	"start": "node seminar.js",
-    "test" : "echo \"Error: no test specified\" && exit 1"
+    "start": "node seminar.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Group 15",
   "license": "ISC",
@@ -23,6 +23,7 @@
   },
   "devDependencies": {
     "chai": "^4.1.2",
-    "mocha": "^5.2.0"
+    "mocha": "^5.2.0",
+    "nodemon": "^1.18.4"
   }
 }

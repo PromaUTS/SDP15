@@ -71,6 +71,9 @@ app.use(express.static(__dirname + '/public'));
 app.use(function(req,res,next){
   res.locals.showTests = app.get('env') !== 'production' &&
     req.query.test === '1';
+    res.locals.success_msg = req.flash('success_msg');
+  res.locals.error_msg = req.flash('error_msg');
+  res.locals.error = req.flash('error');
     next();
 });
 
@@ -107,7 +110,7 @@ app.get('/register/:id', function(req, res){
 
 
 app.post('/register/:id/utsLogin', function(req, res) {
-  var o_id = new objectID(req.params.id);
+  var o_id = req.params.id;
   var url = '/register/' + o_id;
   db.collection('students').findOne({studentId: req.body.studentId} , function(err, user) {
     if (err) {
@@ -115,8 +118,9 @@ app.post('/register/:id/utsLogin', function(req, res) {
     }
     if (!user) {
       console.log("student not found");
+      req.flash("error_msg", "Student ID not found");
       var url = "/register/" + o_id;
-      res.redirect(url);
+      return res.redirect(url);
     }
     if (user) {
       if (user.password == req.body.password) {
@@ -126,6 +130,7 @@ app.post('/register/:id/utsLogin', function(req, res) {
         }
 
       else {
+        req.flash("error_msg", "Incorrect password");
         console.log("incorrect password");
         res.redirect(url);
       }
@@ -154,6 +159,7 @@ app.post('/register/:id/complete', function(req,res) {
     db.collection('seminars').findOne({_id:obj_id}, function(err,seminar) {
       if (err) { throw console.log(err)}
       if (!seminar) {
+        req.flash("error_msg", "Seminar could not be found");
         throw console.log("seminar could not be found")
       }
       console.log("neil look it made it ")
@@ -168,6 +174,7 @@ app.post('/register/:id/complete', function(req,res) {
         if (done) {
           console.log(semArr)
           console.log("seminar was updated")
+          req.flash("success_msg", "Seminar was updated");
           console.log(done.attendees)
         }
       })
@@ -214,6 +221,7 @@ app.post('/editSelf', function(req,res) {
       if (err) throw console.log(err);
       if (deleted) {
         console.log("USER has been removed")
+        req.flash("success_msg", "User has been removed");
         res.redirect('/seminars');
       }
     } )
@@ -240,7 +248,6 @@ app.get('/seminar/manage/:userid/', function(req,res) {
       console.log('User could not be found, going back to main menu')
       console.log(userid)
       console.log(seminarid)
-
       res.redirect('/')
     }
     item = user;
@@ -278,6 +285,7 @@ app.post('/addUser', function(req, res) {
         if (err) throw console.log(err);
         if (user._id == seminar.attendees) {
           console.log("user is already registered, returning to admin menu")
+          req.flash("error_msg", "User is already registered");
           res.redirect('/management')
         }
         count = seminar.attendee_count + 1;
@@ -288,6 +296,7 @@ app.post('/addUser', function(req, res) {
         db.collection('registers').updateOne( {email: req.body.email}, {$set: {seminars: userSemArr}})
         db.collection('seminars').updateOne( {_id: o_id}, {$set: {attendees: semArr, attendee_count: count}})
         console.log("existing user updated")
+        req.flash("success_msg", "User has been updated");
         res.redirect('/management');
       })
     }
@@ -303,6 +312,7 @@ app.post('/addUser', function(req, res) {
     db.collection('seminars').findOne({_id: o_id}, function( err, seminar) {
       if (err) throw console.log(err)
       if (!seminar) {
+        req.flash("error_msg", "Couldn't find seminar with that ID");
         console.log("couldnt find the seminar")
       }
       if (seminar) {
@@ -313,6 +323,7 @@ app.post('/addUser', function(req, res) {
         var semArr = [seminar.attendees.slice()]; /*semArr appends the register ID to be added onto the seminar's registers field*/
         semArr.push(insertedId["ops"][0]["_id"]);
         db.collection('seminars').updateOne( {_id: o_id}, {$set: {attendees: semArr, attendee_count: count}})
+        req.flash("success_msg", "User has been added to the seminar");
         res.redirect('/management');
 
       })
@@ -343,9 +354,11 @@ app.post('/addUser', function(req, res) {
       if (user) {
         db.collection('users').findOne({username: req.body.username}, function(err,usernameMatch) {
         if (usernameMatch) {
+          req.flash("error_msg", "Username is already taken");
           console.log("Error - username is in use - try again");
         }
         else {
+          req.flash("error_msg", "Email is already taken");
         console.log("Error - email already in use - try again");
         }
         res.redirect('/management')
@@ -373,9 +386,11 @@ app.post('/addUser', function(req, res) {
       if (user) {
         db.collection('users').findOne({username: req.body.username}, function(err,usernameMatch) {
         if (usernameMatch) {
+          req.flash("error_msg", "Username is already taken");
           console.log("Error - username is in use - try again");
         }
         else {
+          req.flash("error_msg", "Email is already taken");
         console.log("Error - email already in use - try again");
         }
         res.redirect('/management')
@@ -493,7 +508,7 @@ app.post('/organiserManagement', isLoggedIn, isOrganiser, function(req,res) {
   if (button == 'cancel') {
     db.collection('seminars').deleteOne( {_id: o_id}, function(err, found) {
       if (err) throw console.log(err)
-      if (!found) console.log("cancel was not successful")
+      if (!found) {console.log("cancel was not successful"); req.flash("error_msg", "Could not cancel Seminar");}
       res.redirect("/management");
     })
   }
@@ -578,11 +593,13 @@ app.post('/removeUser', isLoggedIn, isOrganiser, function(req,res) {
       })
     }
     if (!user) {
+      req.flash("error_msg", "User not found");
       console.log("user not found")
     }
     })
   }
   if (!seminar) {
+    req.flash("error_msg", "Seminar not found");
   console.log('seminar not found')
   }
   })
@@ -628,8 +645,10 @@ app.get("/logout", isLoggedIn, function(req, res){
 function isLoggedIn(req, res, next) {
   if (req.isAuthenticated()) {
     return next();
+  } else {
+    req.flash('error', 'you are not logged in');
+    res.redirect('/login');
   }
-  res.redirect('/login');
 }
 
 function isAdmin(req, res, next) {
