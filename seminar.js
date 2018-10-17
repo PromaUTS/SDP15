@@ -133,8 +133,8 @@ app.post('/register/:id/checkStatus', function(req,res) {
     if (err) throw console.log(err);
     if (found) {
 
-      console.log('You\'ve already registered for this seminar');
-      req.flash("error_msg", "You've already registered!");
+      console.log('You\'ve already registered/shown interest for this seminar');
+      req.flash("error_msg", "You've already registered or shown interest! Sending you back to the home page!");
       res.redirect('/seminars');
     }
     if (!found) {
@@ -178,60 +178,71 @@ app.get('/register/:id/complete', function(req,res) {
 })
 
 app.post('/register/:id/complete', function(req,res) {
+  var attendeeObj;
   var o_id = req.params.id; // USER ID
   var obj_id = new objectID(req.params.id); // SEMINAR ID
   var item = [];
   var url = '/register/' + o_id + '/complete';
+  var seminarObj = [{seminarID: o_id, status: req.body.signType}];
+
+  var attendeeCount;
+
   item = {
     firstname: req.body.firstname,
     lastname: req.body.lastname,
     email: req.body.email,
-    seminars: o_id.toString()
+    seminars: seminarObj
   }
-  db.collection('registers').insertOne(item, function(err) {
-    if (err) throw console.log(err);
+
   db.collection('registers').findOne({email: req.body.email} , function(err, user) {
     if (err) {throw console.log(err)}
-    db.collection('seminars').findOne({_id:obj_id}, function(err,seminar) {
-      if (err) { throw console.log(err)}
-      if (!seminar) {
-        req.flash("error_msg", "Seminar could not be found");
-        throw console.log("seminar could not be found")
-      }
-      console.log("neil look it made it ")
-      var count = seminar.attendee_count + 1;
-      var userSemArr = [user.seminars.slice()]; /*userSemArr appends the seminar ID to be added onto the register's seminars field*/
-      userSemArr.push(req.body.seminar);
-      var semArr = [seminar.attendees.slice()]; /*semArr appends the register ID to be added onto the seminar's registers field*/
-      semArr.push(user._id);
-      var index = userSemArr.indexOf(obj_id);
-      console.log("o_id:",o_id)
-      db.collection('registers').updateOne( {email: req.body.email}, {$set: {seminars: userSemArr}})
-      db.collection('seminars').updateOne( {_id: obj_id}, {$set: {attendees: semArr, attendee_count: count}}, function(err,done) {
-        if (done) {
-          console.log(semArr)
-          console.log("seminar was updated")
-          req.flash("success_msg", "Seminar was updated");
+    if (!user) {
+      db.collection('registers').insertOne(item, function(err) {
+        if (err) throw console.log(err);
+      })
+    }
+    if (user) {
+      var currentUserArr = [user.seminars.slice()];
+      currentUserArr.push(seminarObj);
+      db.collection('registers').updateOne({_id:user._id}, {$set:{seminars:currentUserArr}}, function(err,success){
+        if (err) throw console.log(err)
+        if (success) {
+          console.log("user's seminar array was successfully updated");
         }
-      db.collection('registers').findOne( {seminars: o_id}, function(err,found) {
+      })
+    }
+    })
+    db.collection('seminars').findOne({_id: obj_id}, function(err,seminar) {
       if (err) throw console.log(err)
-      if (found)
-      {
-        var userID = user._id;
-        var seminarID = seminar._id;
-        var url = "http://localhost:3000/seminar/manage/" + userID +"?seminarid="+seminarID
-        console.log("hello");
-        res.render('complete', {seminarId: seminarID, userId: userID, url : url});
-      }
 
-      else {
-        throw console.log('comparison failed')
+      if (seminar) {
+        console.log('found seminar');
+      db.collection('registers').findOne({email: req.body.email}, function(err, user) {
+        if (err) throw console.log(err);
+        if (user) {
+        var attendeeObj = [{attendeeID: user._id.toString(), status: req.body.signType}];
+        var currentSemArr = [seminar.attendees.slice()];
+        attendeeCount = seminar.attendee_count + 1;
+        currentSemArr.push(attendeeObj);
+        db.collection('seminars').updateOne({_id: obj_id}, {$set:{attendees:currentSemArr, attendee_count: attendeeCount}}, function(err,success){
+          if (err) throw console.log(err)
+          if (success) {
+            console.log("Seminar array was successfully updated");
+            db.collection('registers').findOne( {seminars: {$elemMatch: {seminarID:o_id}}}, function(err,found) {
+              if (err) throw console.log(err)
+              if (found)
+              {
+                var userID = user._id;
+                var seminarID = seminar._id;
+                var url = "http://localhost:3000/seminar/manage/" + userID +"?seminarid="+seminarID
+                res.render('complete', {seminarId: seminarID, userId: userID, url : url});
+              }
+          })
+        }
+      })
       }
     })
-    })
-  })
-
-  })
+  }
   })
 })
 
@@ -267,6 +278,9 @@ app.post('/editSelf', function(req,res) {
 
 /*User Detail Management Page - Change/Delete their registration*/
 app.get('/seminar/manage/:userid/', function(req,res) {
+  var type;
+  var array = [];
+  var suserid = req.params.userid;
   var userid = new objectID(req.params.userid);
   var seminarid = req.query.seminarid;
   console.log(seminarid);
@@ -277,7 +291,7 @@ app.get('/seminar/manage/:userid/', function(req,res) {
   [{
     _id : userid
    },{
-    seminars : seminarid
+    seminars : {$elemMatch: {seminarID:seminarid}}
   }]}, function(err, user) {
     if (err) throw console.log(err);
     if (!user) {
@@ -286,12 +300,36 @@ app.get('/seminar/manage/:userid/', function(req,res) {
       console.log(seminarid)
       res.redirect('/')
     }
-    item = user;
-    res.render('userLinkManagement', {item: item})
+    var cursor = db.collection('seminars').find({attendees: {$elemMatch: {attendeeID: suserid}}});
+    cursor.forEach(function(doc,err) {
+      console.log(doc);
+      if (err) throw console.log(err)
+      array.push(doc);
+      type = doc.attendees[0].status;
+    }, function() {
+      item = user;
+      res.render('userLinkManagement', {item: item, seminars:array, type:type})
+    })
     }
   )}
 )
-app.get('/')
+
+/*app.post('/changeStatus', function(req,res) {
+  var id = req.body.submit;
+  var s_id = new objectID(id); // seminarID with type objectID
+  var option = req.body.selection;
+  var seminarsObjArr = [{}]
+  db.collection
+  db.collection('registers').findOneAndUpdate(
+    {seminars: {$elemMatch: {seminarID:id, }
+    if (err) throw console.log(err);
+    if (success) {
+      console.log("SUCCESS!!")
+      res.redirect("/seminars");
+    }
+  }})
+})*/
+
 
 app.post('/register/:id/registerHandle', function(req, res){
   var o_id = new objectID(req.params.id);
@@ -624,7 +662,7 @@ app.post('/organiserManagement', isLoggedIn, isOrganiser, function(req,res) {
       if (!found) {
         console.log("cancel was not successful"); req.flash("error_msg", "Could not cancel Seminar");
       }
-      var cursor = db.collection('registers').find( {seminars: seminarID });
+      var cursor = db.collection('registers').find( {seminars: {$elemMatch: {seminarID: seminarID }}});
       cursor.forEach(function(user,err) {
         if (err) throw console.log(err);
         var index = user.seminars.indexOf(seminarID);
@@ -655,14 +693,35 @@ app.post('/organiserManagement', isLoggedIn, isOrganiser, function(req,res) {
     }
 
   if (button == 'print') {
+    var x = 100;
+    var y = 50;
+    var counter = 0;
     var pdfDoc = new PDFDocument;
     pdfDoc.fontSize(20);
     pdfDoc.pipe(fs.createWriteStream('nametags.pdf'));
     var cursor = db.collection('registers').find({seminars: seminarID});
     cursor.forEach(function(doc,err) {
       if (err) throw console.log(err)
-      pdfDoc.text(doc.firstname + doc.lastname);
-      pdfDoc.moveDown();
+      counter++;
+      if (counter == 1)
+      {
+        pdfDoc.text(doc.firstname + " "+doc.lastname, x, y);
+        x += 300;
+      }
+      if (counter == 2)
+      {
+        pdfDoc.text(doc.firstname + " "+doc.lastname, x, y);
+        x = 100;
+        y += 100;
+        counter = 0;
+      }
+    }, function() {
+      /*pdfDoc.text("bob saget", leftx, lefty) /*{
+        width: 200, height: 100, align:'center'});*/
+      /*pdfDoc.moveDown();
+      pdfDoc.text("bob saget", 100, 200){width: 200, align:'center'});*/
+      pdfDoc.end();
+      res.redirect('/management');
     })
   }
   })
