@@ -148,8 +148,8 @@ app.get('/register/:id/complete', function(req,res) {
 })
 
 app.post('/register/:id/complete', function(req,res) {
-  var o_id = req.params.id;
-  var obj_id = new objectID(req.params.id);
+  var o_id = req.params.id; // USER ID
+  var obj_id = new objectID(req.params.id); // SEMINAR ID
   var item = [];
   var url = '/register/' + o_id + '/complete';
   item = {
@@ -175,15 +175,14 @@ app.post('/register/:id/complete', function(req,res) {
       var semArr = [seminar.attendees.slice()]; /*semArr appends the register ID to be added onto the seminar's registers field*/
       semArr.push(user._id);
       var index = userSemArr.indexOf(obj_id);
+      console.log("o_id:",o_id)
       db.collection('registers').updateOne( {email: req.body.email}, {$set: {seminars: userSemArr}})
-      db.collection('seminars').updateOne( {_id: o_id}, {$set: {attendees: semArr, attendee_count: count}}, function(err,done) {
+      db.collection('seminars').updateOne( {_id: obj_id}, {$set: {attendees: semArr, attendee_count: count}}, function(err,done) {
         if (done) {
           console.log(semArr)
           console.log("seminar was updated")
           req.flash("success_msg", "Seminar was updated");
-          console.log(done.attendees)
         }
-      })
       db.collection('registers').findOne( {seminars: o_id}, function(err,found) {
       if (err) throw console.log(err)
       if (found)
@@ -198,6 +197,7 @@ app.post('/register/:id/complete', function(req,res) {
       else {
         throw console.log('comparison failed')
       }
+    })
     })
   })
 
