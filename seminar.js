@@ -620,7 +620,7 @@ app.get('/management/:seminarid/speakers', isLoggedIn, function (req,res) {
   res.render('speakers')
 })
 
-app.get("/logout", isLoggedIn, function(req, res){
+app.get('/logout', isLoggedIn, function(req, res){
      req.logout();
      res.redirect('/');
 });
