@@ -1,6 +1,19 @@
-<h1>UTS SEMINAR MANAGEMENT</h1>
+<head>
+<meta charset="UTF-8">
+  <link rel="stylesheet" type="text/css" href="/css/style.css">
+</head>
+
+<header>
+<ul>
+  <li><a href="/management">UTS SEMINAR MANAGEMENT</a></li>
+  <li style="float:right"><a href="/logout">Log Out</a></li>
+  <li style="float:right">Logged in as: {{username}}</li>
+</ul>
+<header>
+
+<!--<h1>UTS SEMINAR MANAGEMENT</h1>
 <h2>Logged in as: {{username}} <img src="" alt="Profile Icon"></h2>
-<a href="/logout">Log Out</a>
+<a href="/logout">Log Out</a>-->
 
 {{#if isAdmin}}
   <h2>User Management</h2>

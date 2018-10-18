@@ -1,4 +1,16 @@
+<head>
+<meta charset="UTF-8">
+  <link rel="stylesheet" type="text/css" href="/css/style.css">
+</head>
 
+<header>
+<ul>
+  <li><a href="/management">UTS SEMINAR MANAGEMENT</a></li>
+  <li style="float:right"><a href="/logout">Log Out</a></li>
+  <li style="float:right">Logged in as: {{username}}</li>
+</ul>
+<header>
+    
 {{#if isConfirmed}}
 <form method="POST" action="/register/{{seminarId}}/complete">
   First Name<input type="text" name="firstname"></input>
