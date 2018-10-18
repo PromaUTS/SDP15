@@ -542,7 +542,14 @@ app.post('/searchSeminar', function(req,res) {
 
   if (choice =='date') {
     field ='date';
+    var inputDate = new Date(req.body.input);
+    var month = inputDate.getMonth() + 1 ;
+    var day = inputDate.getDay() - 1;
+    if (day == 0) {
+      query[field] = "$gte"
+    }
     query[field] = req.body.input;
+
     getSeminarList(query, function(err, array) {
       if (err) throw console.log(err);
       if (array) {
@@ -619,6 +626,7 @@ app.post('/addSeminar', isLoggedIn, function(req,res) {
       title: req.body.title,
       organiser: req.user.firstname +" "+req.user.lastname,
       speaker: req.body.speaker,
+      speaker_bio: req.body.bio,
       date: req.body.date,
       time: req.body.time,
       location: req.body.location,
@@ -763,7 +771,10 @@ app.post('/confirmEdit', isLoggedIn, isOrganiser, function (req,res) {
         date: req.body.date,
         time: req.body.time,
         location: req.body.location,
-        description: req.body.description
+        description: req.body.description,
+        speaker: req.body.speaker,
+        speaker_bio: req.body.bio,
+        organiser: req.body.organiser
       }
     }, function(err, success) {
       if (err) throw console.log(err);

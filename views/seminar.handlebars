@@ -1,10 +1,14 @@
 
 <h1>{{items.title}}</h1>
-{{items.organiser}}
-{{items.date}}
-{{items.time}}
-{{items.location}}
-{{items.description}}
+Organiser: {{items.organiser}}
+<br>
+Date: {{items.date}}
+<br>
+Time: {{items.time}}
+<br>
+Location: {{items.location}}
+<br>
+Description: {{items.description}}
 <br>
 <br>
 <a href='/seminars'>Go back</a>
@@ -17,6 +21,9 @@
 {{#if isEditing}}
   <form method="POST" action="/confirmEdit">
     Title<input type="text" value="{{items.title}}" name="title">
+    Organiser<input type="text" value="{{items.organiser}}" name="organiser">
+    Speaker<input type="text" value="{{items.speaker}}" name="speaker">
+    Speaker Bio<input type="text" value ="{{items.speaker_bio}}" name="bio">
     Date<input type="text" value="{{items.date}}"name="date">
     Time<input type="text" value="{{items.time}}"name="time">
     Location<input type="text" value="{{items.location}}" name="location">
